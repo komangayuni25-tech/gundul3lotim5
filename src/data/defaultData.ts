@@ -2,16 +2,16 @@ import { LocationConfig, GameSettings, Question } from '../types/game';
 import { QUESTION_IMAGES } from './questionImages';
 
 export const DEFAULT_LOCATIONS: LocationConfig[] = [
-  // --- POS 1: PERPUSTAKAAN ---
+  // --- POS 1: DI BAWAH POHON BELIMBING ---
   {
     id: 'pos_1',
     code: 'POS 1',
-    name: 'Perpustakaan',
+    name: 'Di Bawah Pohon Belimbing',
     qrCode: 'LITERASI-POS-1',
-    hint: '📚 Aku adalah istana beribu jendela dunia tempat rak-rak penuh buku berjejer rapi dalam keheningan yang tenang. Temukan kartu QR Code tersembunyi di dekat meja baca utama!',
+    hint: '⭐ Aku adalah tanaman peneduh di halaman sekolah yang menghasilkan buah unik berbentuk bintang bersegi lima jika dipotong melintang, rasanya segar manis-asam. Temukan kartu QR Code di sekitar batang rindangku!',
     isFinal: false,
     isActive: true,
-    iconName: 'BookOpen',
+    iconName: 'Trees',
     story: {
       chapterNumber: 1,
       title: 'Pos 1: Bagaimana Aku Memenuhi Kebutuhanku (Kebutuhan vs Keinginan)',
@@ -42,16 +42,16 @@ export const DEFAULT_LOCATIONS: LocationConfig[] = [
     },
   },
 
-  // --- POS 2: TAMAN SEKOLAH ---
+  // --- POS 2: DI BELAKANG TIANG BENDERA ---
   {
     id: 'pos_2',
     code: 'POS 2',
-    name: 'Taman sekolah',
+    name: 'Di Belakang Tiang Bendera',
     qrCode: 'LITERASI-POS-2',
-    hint: '🌺 Aku adalah hamparan hijau terbuka yang asri nan sejuk, tempat aneka bunga mekar indah dan kupu-kupu beterbangan di antara rimbunnya dedaunan. Temukan kartu QR Code di antara pot tanaman hijau!',
+    hint: '🇮🇩 Aku berdiri tegak menjulang tinggi di tengah halaman upacara, tempat Sang Merah Putih berkibar gagah setiap hari Senin pagi saat lagu Indonesia Raya dinyanyikan. Temukan kartu QR Code tepat di sisi belakangku!',
     isFinal: false,
     isActive: true,
-    iconName: 'Trees',
+    iconName: 'Compass',
     story: {
       chapterNumber: 2,
       title: 'Pos 2: Sejarah Uang & Perjalanan Pemenuhan Kebutuhan',
@@ -82,13 +82,13 @@ export const DEFAULT_LOCATIONS: LocationConfig[] = [
     },
   },
 
-  // --- POS 3: RUANG KELAS ---
+  // --- POS 3: DI TANAMAN CABAI ---
   {
     id: 'pos_3',
     code: 'POS 3',
-    name: 'Ruang kelas',
+    name: 'Di Tanaman Cabai',
     qrCode: 'LITERASI-POS-3',
-    hint: '📝 Aku adalah ruangan utama tempat mejamu dan kawan-kawan berjejer rapi menghadap papan tulis, tempat setiap pagi menimba ilmu bersama Bapak/Ibu Guru. Temukan kartu QR Code di sudut meja belajar!',
+    hint: '🌶️ Aku adalah tanaman perdu kecil di kebun sekolah yang menghasilkan buah mungil berwarna hijau saat muda dan berubah merah menyala saat matang, terkenal dengan rasanya yang pedas menggigit! Temukan kartu QR Code di dekat pot atau bedenganku!',
     isFinal: false,
     isActive: true,
     iconName: 'Sparkles',
@@ -123,16 +123,16 @@ export const DEFAULT_LOCATIONS: LocationConfig[] = [
     },
   },
 
-  // --- POS 4: LAPANGAN ---
+  // --- POS 4: DI BAWAH POHON CEMPAKA ---
   {
     id: 'pos_4',
     code: 'POS 4',
-    name: 'Lapangan',
+    name: 'Di Bawah Pohon Cempaka',
     qrCode: 'LITERASI-POS-4',
-    hint: '⚽ Aku adalah bentangan ruang terbuka terluas di sekolah tempat seluruh siswa berbaris upacara di pagi hari dan berolahraga riang di bawah sinar matahari. Temukan kartu QR Code di dekat tiang bendera atau pembatas lari!',
+    hint: '🌼 Aku adalah tanaman berkayu kebanggaan Bali yang menghasilkan kuncup bunga kuning-putih beraroma sangat harum semerbak, sering dipakai sarana persembahyangan. Temukan kartu QR Code di bawah naungan dahanku!',
     isFinal: false,
     isActive: true,
-    iconName: 'FlaskConical',
+    iconName: 'Trees',
     story: {
       chapterNumber: 4,
       title: 'Pos 4: Bentang Alam & Ragam Usaha Ekonomi di Daerahku',
@@ -163,13 +163,13 @@ export const DEFAULT_LOCATIONS: LocationConfig[] = [
     },
   },
 
-  // --- POS 5 (FINAL): GUDANG ---
+  // --- POS 5 (FINAL): WALI KELAS 5 ---
   {
     id: 'pos_5',
     code: 'POS 5 (FINAL)',
-    name: 'Gudang',
+    name: 'Wali Kelas 5',
     qrCode: 'LITERASI-POS-5',
-    hint: '📦 Aku adalah ruangan rahasia di sudut sekolah tempat menyimpan perkakas tukang, sapu ijuk, kursi cadangan, dan kardus perlengkapan sekolah. Temukan kartu QR Code terakhir penuntas misi di dekat pintu kayu kokohku!',
+    hint: '👩‍🏫 Aku bukanlah benda mati maupun sudut bangunan, melainkan sosok orang tua keduamu di sekolah yang setiap hari dengan sabar membimbing, mengajar, dan mendampingi seluruh siswa di kelasmu. Temuilah beliau dengan sopan untuk memindai kartu QR Code terakhir!',
     isFinal: true,
     isActive: true,
     iconName: 'Crown',
@@ -220,7 +220,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
 
 export const DEFAULT_QUESTIONS: Question[] = [
   // =========================================================================
-  // --- POS 1: PERPUSTAKAAN (4 SOAL KEBUTUHAN VS KEINGINAN & TINGKATANNYA) ---
+  // --- POS 1: DI BAWAH POHON BELIMBING (4 SOAL KEBUTUHAN VS KEINGINAN) ---
   // =========================================================================
   {
     id: 'q_pos_1_1',
@@ -300,7 +300,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
   },
 
   // =========================================================================
-  // --- POS 2: TAMAN SEKOLAH (4 SOAL SEJARAH UANG & ALAT TUKAR) ---
+  // --- POS 2: DI BELAKANG TIANG BENDERA (4 SOAL SEJARAH UANG & ALAT TUKAR) ---
   // =========================================================================
   {
     id: 'q_pos_2_1',
@@ -380,7 +380,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
   },
 
   // =========================================================================
-  // --- POS 3: RUANG KELAS (4 SOAL KEGIATAN PRODUKSI, DISTRIBUSI, KONSUMSI) ---
+  // --- POS 3: DI TANAMAN CABAI (4 SOAL PRODUKSI, DISTRIBUSI, KONSUMSI) ---
   // =========================================================================
   {
     id: 'q_pos_3_1',
@@ -460,7 +460,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
   },
 
   // =========================================================================
-  // --- POS 4: LAPANGAN (4 SOAL BENTANG ALAM & PASAR TRADISIONAL/MODERN) ---
+  // --- POS 4: DI BAWAH POHON CEMPAKA (4 SOAL BENTANG ALAM & PASAR) ---
   // =========================================================================
   {
     id: 'q_pos_4_1',
@@ -540,7 +540,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
   },
 
   // =========================================================================
-  // --- POS 5: GUDANG (4 SOAL PELAKU EKONOMI BIJAK, PRIORITAS & 3R) ---
+  // --- POS 5: WALI KELAS 5 (4 SOAL PELAKU EKONOMI BIJAK, PRIORITAS & 3R) ---
   // =========================================================================
   {
     id: 'q_pos_5_1',
