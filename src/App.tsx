@@ -107,6 +107,11 @@ export default function App() {
           stored &&
           (stored.status === 'active' || stored.status === 'failed' || stored.status === 'timeout')
         ) {
+          if (stored.screenLocked && stored.screenLockReason?.toLowerCase().includes('fullscreen')) {
+            stored.screenLocked = false;
+            stored.screenLockReason = undefined;
+            gameService.saveSession(stored);
+          }
           setSession(stored);
           const currentLocId = stored.route[stored.currentPosIndex];
           const locConfig = locs.find((l) => l.id === currentLocId);
@@ -138,6 +143,8 @@ export default function App() {
                 difficulty: q.difficulty,
                 targetParagraph: q.targetParagraph,
                 options: q.options,
+                imageUrl: q.imageUrl,
+                imageCaption: q.imageCaption,
               }));
             setCurrentStationQuestions(stationQ);
             setCurrentQuestionIndex(posProg.solvedQuestions.length);
@@ -153,20 +160,6 @@ export default function App() {
   // Start new game
   const handleStartGame = async (player: PlayerInfo) => {
     try {
-      // Request fullscreen immediately on user gesture so phone screen locks
-      try {
-        const el = document.documentElement as any;
-        if (!document.fullscreenElement) {
-          if (el.requestFullscreen) {
-            await el.requestFullscreen({ navigationUI: 'hide' });
-          } else if (el.webkitRequestFullscreen) {
-            await el.webkitRequestFullscreen();
-          }
-        }
-      } catch {
-        // ignore if unsupported
-      }
-
       // Clear any previous Pos article locks so new session starts fresh
       ['pos_1', 'pos_2', 'pos_3', 'pos_4', 'pos_5'].forEach((id) => {
         localStorage.removeItem(`sigundul_article_locked_${id}`);
@@ -186,18 +179,6 @@ export default function App() {
 
   // Resume active session
   const handleResumeSession = async () => {
-    try {
-      const el = document.documentElement as any;
-      if (!document.fullscreenElement) {
-        if (el.requestFullscreen) {
-          await el.requestFullscreen({ navigationUI: 'hide' });
-        } else if (el.webkitRequestFullscreen) {
-          await el.webkitRequestFullscreen();
-        }
-      }
-    } catch {
-      // ignore
-    }
     setView('adventure');
   };
 
@@ -232,9 +213,22 @@ export default function App() {
     const res = await gameService.verifyQr(session.gameId, qrCode, session);
 
     if (res.matched && res.questions) {
-      setCurrentStationQuestions(res.questions);
       const currentLocId = session.route[session.currentPosIndex];
-      const posProg = session.posProgress[currentLocId];
+      const updatedSession: GameSession = {
+        ...session,
+        posProgress: {
+          ...session.posProgress,
+          [currentLocId]: {
+            ...session.posProgress[currentLocId],
+            qrVerified: true,
+          },
+        },
+      };
+      setSession(updatedSession);
+      gameService.saveSession(updatedSession);
+
+      setCurrentStationQuestions(res.questions);
+      const posProg = updatedSession.posProgress[currentLocId];
       setCurrentQuestionIndex(posProg?.solvedQuestions.length || 0);
 
       if (res.story) {
@@ -321,6 +315,30 @@ export default function App() {
       sounds.playPosComplete();
       const justFinishedCode = currentStation?.code || 'POS';
       const isNextFinal = res.nextStation.isFinal;
+
+      if (session) {
+        const finishedLocId = session.route[session.currentPosIndex];
+        const nextIdxFromRoute = session.route.indexOf(res.nextStation.id);
+        const targetNextIndex =
+          nextIdxFromRoute !== -1
+            ? nextIdxFromRoute
+            : Math.min(session.currentPosIndex + 1, session.route.length - 1);
+
+        const updatedSession: GameSession = {
+          ...session,
+          currentPosIndex: targetNextIndex,
+          score: res.score !== undefined ? res.score : session.score,
+          posProgress: {
+            ...session.posProgress,
+            [finishedLocId]: {
+              ...session.posProgress[finishedLocId],
+              completed: true,
+            },
+          },
+        };
+        setSession(updatedSession);
+        gameService.saveSession(updatedSession);
+      }
 
       setCompletedPosInfo({
         completedPosCode: justFinishedCode,

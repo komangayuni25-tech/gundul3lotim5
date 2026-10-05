@@ -403,28 +403,46 @@ class GameService {
       });
       if (res.ok) {
         const data = await res.json();
-        // Update local session cache
-        if (data.score !== undefined) {
-          currentSession.score = data.score;
+        const currentLocId = currentSession.route[currentSession.currentPosIndex];
+        const nextSession: GameSession = {
+          ...currentSession,
+          score: data.score !== undefined ? data.score : currentSession.score,
+          posProgress: { ...currentSession.posProgress },
+        };
+        if (data.isCorrect && nextSession.posProgress[currentLocId]) {
+          const solved = nextSession.posProgress[currentLocId].solvedQuestions || [];
+          nextSession.posProgress[currentLocId] = {
+            ...nextSession.posProgress[currentLocId],
+            solvedQuestions: solved.includes(questionId) ? solved : [...solved, questionId],
+            completed: data.posCompleted ? true : nextSession.posProgress[currentLocId].completed,
+          };
+        }
+        if (data.posCompleted && !data.allCompleted) {
+          nextSession.currentPosIndex = Math.min(
+            currentSession.currentPosIndex + 1,
+            currentSession.route.length - 1
+          );
         }
         if (data.posFailed) {
-          const currentLocId = currentSession.route[currentSession.currentPosIndex];
-          if (currentSession.posProgress[currentLocId]) {
-            currentSession.posProgress[currentLocId].failed = true;
+          if (nextSession.posProgress[currentLocId]) {
+            nextSession.posProgress[currentLocId] = {
+              ...nextSession.posProgress[currentLocId],
+              failed: true,
+            };
           }
-          currentSession.status = 'failed';
-          currentSession.failedPosCode = data.failedPosCode;
-          currentSession.failedPosName = data.failedPosName;
-          currentSession.failedReason = data.failedReason;
+          nextSession.status = 'failed';
+          nextSession.failedPosCode = data.failedPosCode;
+          nextSession.failedPosName = data.failedPosName;
+          nextSession.failedReason = data.failedReason;
         }
-        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(currentSession));
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(nextSession));
         return data;
       }
     } catch {
       // fallback
     }
 
-    // Local client fallback
+    // Local client fallback (work on a copy so React state doesn't jump before user clicks Next Pos)
     const allQ = await this.getQuestions();
     const settings = await this.getSettings();
     const locations = await this.getLocations();
@@ -433,23 +451,36 @@ class GameService {
     if (!q) throw new Error('Soal tidak ditemukan');
 
     const currentLocId = currentSession.route[currentSession.currentPosIndex];
-    const posProg = currentSession.posProgress[currentLocId];
+    const existingProg = currentSession.posProgress[currentLocId];
+    const posProg = {
+      ...existingProg,
+      questionAttempts: { ...existingProg.questionAttempts },
+      solvedQuestions: [...existingProg.solvedQuestions],
+    };
+
+    const nextSession: GameSession = {
+      ...currentSession,
+      posProgress: {
+        ...currentSession.posProgress,
+        [currentLocId]: posProg,
+      },
+    };
 
     const currentAttempts = (posProg.questionAttempts[questionId] || 0) + 1;
     posProg.questionAttempts[questionId] = currentAttempts;
-    currentSession.totalAttempts++;
+    nextSession.totalAttempts++;
 
     const u = answer.trim().toLowerCase().replace(/[\s\-_.,]+/g, ' ');
     const c = q.correctAnswer.trim().toLowerCase().replace(/[\s\-_.,]+/g, ' ');
     const isCorrect = u === c || (c.includes(u) && u.length >= 4);
 
     if (isCorrect) {
-      currentSession.totalCorrect++;
+      nextSession.totalCorrect++;
       let pointsAwarded = settings.pointsFirstAttempt;
       if (currentAttempts === 2) pointsAwarded = settings.pointsSecondAttempt;
       else if (currentAttempts >= 3) pointsAwarded = settings.pointsThirdAttempt;
 
-      currentSession.score += pointsAwarded;
+      nextSession.score += pointsAwarded;
       if (!posProg.solvedQuestions.includes(questionId)) {
         posProg.solvedQuestions.push(questionId);
       }
@@ -459,16 +490,16 @@ class GameService {
 
       if (isPosCompleted) {
         posProg.completed = true;
-        currentSession.score += settings.pointsPosBonus;
+        nextSession.score += settings.pointsPosBonus;
 
         const nextIndex = currentSession.currentPosIndex + 1;
         const allCompleted = nextIndex >= currentSession.route.length;
 
         if (allCompleted) {
-          currentSession.currentPosIndex = nextIndex;
-          currentSession.endTime = Date.now();
-          currentSession.score += settings.pointsGameBonus;
-          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(currentSession));
+          nextSession.currentPosIndex = nextIndex;
+          nextSession.endTime = Date.now();
+          nextSession.score += settings.pointsGameBonus;
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(nextSession));
 
           return {
             isCorrect: true,
@@ -478,14 +509,14 @@ class GameService {
             posCompleted: true,
             allCompleted: true,
             needsRetelling: true,
-            score: currentSession.score,
+            score: nextSession.score,
             treasureCode: settings.treasureCode,
             teacherMessage: settings.teacherMessage,
           };
         }
 
-        currentSession.currentPosIndex = nextIndex;
-        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(currentSession));
+        nextSession.currentPosIndex = nextIndex;
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(nextSession));
 
         const nextLocId = currentSession.route[nextIndex];
         const nextLocConfig = locations.find(l => l.id === nextLocId);
@@ -497,7 +528,7 @@ class GameService {
           explanation: q.explanation,
           posCompleted: true,
           allCompleted: false,
-          score: currentSession.score,
+          score: nextSession.score,
           nextStation: {
             posNumber: nextIndex + 1,
             totalPos: currentSession.route.length,
@@ -511,7 +542,7 @@ class GameService {
         };
       }
 
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(currentSession));
+      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(nextSession));
 
       return {
         isCorrect: true,
@@ -519,7 +550,7 @@ class GameService {
         attemptsUsed: currentAttempts,
         explanation: q.explanation,
         posCompleted: false,
-        score: currentSession.score,
+        score: nextSession.score,
       };
     }
 
@@ -527,12 +558,12 @@ class GameService {
     if (isOutOfAttempts) {
       const currentLocConfig = locations.find(l => l.id === currentLocId);
       posProg.failed = true;
-      currentSession.status = 'failed';
-      currentSession.failedPosCode = currentLocConfig?.code || `POS ${currentSession.currentPosIndex + 1}`;
-      currentSession.failedReason = `Gagal menaklukkan soal di ${currentSession.failedPosCode} setelah ${settings.maxAttempts} kali percobaan.`;
+      nextSession.status = 'failed';
+      nextSession.failedPosCode = currentLocConfig?.code || `POS ${currentSession.currentPosIndex + 1}`;
+      nextSession.failedReason = `Gagal menaklukkan soal di ${nextSession.failedPosCode} setelah ${settings.maxAttempts} kali percobaan.`;
     }
 
-    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(currentSession));
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(nextSession));
     return {
       isCorrect: false,
       pointsAwarded: 0,
@@ -540,10 +571,10 @@ class GameService {
       explanation: isOutOfAttempts ? q.explanation : undefined,
       posCompleted: false,
       posFailed: isOutOfAttempts,
-      failedPosCode: currentSession.failedPosCode,
-      failedPosName: currentSession.failedPosName,
-      failedReason: currentSession.failedReason,
-      score: currentSession.score,
+      failedPosCode: nextSession.failedPosCode,
+      failedPosName: nextSession.failedPosName,
+      failedReason: nextSession.failedReason,
+      score: nextSession.score,
     };
   }
 
@@ -665,6 +696,51 @@ class GameService {
     return {
       success: true,
       message: 'Aplikasi berhasil di-reset oleh Guru! Kelompok dapat memulai kembali dari Pos 1.',
+    };
+  }
+
+  // Lock screen display
+  async lockScreen(gameId: string, reason: string, currentSession: GameSession): Promise<GameSession> {
+    const updated: GameSession = {
+      ...currentSession,
+      screenLocked: true,
+      screenLockReason: reason,
+      screenLockCount: (currentSession.screenLockCount || 0) + 1,
+    };
+    this.saveSession(updated);
+    return updated;
+  }
+
+  // Unlock screen display by Teacher
+  async unlockScreenByTeacher(
+    code: string,
+    currentSession: GameSession | null
+  ): Promise<{ success: boolean; message: string; session?: GameSession }> {
+    const cleanCode = (code || '').trim().toLowerCase();
+    if (cleanCode !== 'guru123' && cleanCode !== 'ulangi' && cleanCode !== 'buka') {
+      return {
+        success: false,
+        message: 'Kode / PIN Guru tidak sesuai!',
+      };
+    }
+
+    if (currentSession) {
+      const updated: GameSession = {
+        ...currentSession,
+        screenLocked: false,
+        screenLockReason: undefined,
+      };
+      this.saveSession(updated);
+      return {
+        success: true,
+        message: 'Kuncian tampilan berhasil dibuka oleh Guru.',
+        session: updated,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Kuncian tampilan berhasil dibuka oleh Guru.',
     };
   }
 
