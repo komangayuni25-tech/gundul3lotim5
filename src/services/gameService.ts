@@ -17,7 +17,7 @@ import {
 const LOCAL_SESSION_KEY = 'sigundul_ipas_v6_session';
 const LOCAL_SETTINGS_KEY = 'sigundul_ipas_v6_settings';
 const LOCAL_LOCATIONS_KEY = 'sigundul_ipas_v6_locations';
-const LOCAL_QUESTIONS_KEY = 'sigundul_ipas_v6_questions';
+const LOCAL_QUESTIONS_KEY = 'sigundul_ipas_v7_questions';
 const LOCAL_LEADERBOARD_KEY = 'sigundul_ipas_v6_leaderboard';
 
 // Helper to shuffle array
@@ -486,7 +486,12 @@ class GameService {
       }
 
       const stationQuestions = allQ.filter(item => item.locationId === currentLocId).slice(0, 5);
-      const isPosCompleted = stationQuestions.every(item => posProg.solvedQuestions.includes(item.id));
+      const isLastQuestionOfStation =
+        stationQuestions.length > 0 &&
+        stationQuestions[stationQuestions.length - 1].id === questionId;
+      const isPosCompleted =
+        stationQuestions.every(item => posProg.solvedQuestions.includes(item.id)) ||
+        isLastQuestionOfStation;
 
       if (isPosCompleted) {
         posProg.completed = true;

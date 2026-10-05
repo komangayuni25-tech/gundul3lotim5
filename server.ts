@@ -351,7 +351,12 @@ async function startServer() {
 
       // Check if all questions for this pos are answered
       const stationQuestions = questions.filter(item => item.locationId === currentLocId).slice(0, 5);
-      const isPosCompleted = stationQuestions.every(item => posProgress.solvedQuestions.includes(item.id));
+      const isLastQuestionOfStation =
+        stationQuestions.length > 0 &&
+        stationQuestions[stationQuestions.length - 1].id === questionId;
+      const isPosCompleted =
+        stationQuestions.every(item => posProgress.solvedQuestions.includes(item.id)) ||
+        isLastQuestionOfStation;
 
       if (isPosCompleted) {
         posProgress.completed = true;

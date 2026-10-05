@@ -246,11 +246,26 @@ export default function App() {
     }
 
     const currentQ = currentStationQuestions[currentQuestionIndex];
+    const currentLocId = session.route[session.currentPosIndex];
     const res = await gameService.submitAnswer(session.gameId, currentQ.id, answer, session);
 
-    // Keep session state updated immediately (score or failed lock)
+    const existingProg = session.posProgress[currentLocId] || {
+      locationId: currentLocId,
+      qrVerified: true,
+      completed: false,
+      currentQuestionIndex: 0,
+      questionAttempts: {},
+      solvedQuestions: [],
+    };
+
+    const prevSolved = existingProg.solvedQuestions || [];
+    const newSolved =
+      res.isCorrect && !prevSolved.includes(currentQ.id)
+        ? [...prevSolved, currentQ.id]
+        : prevSolved;
+
+    // Keep session state updated immediately (score, solvedQuestions, attempts, or failed lock)
     if (res.posFailed) {
-      const currentLocId = session.route[session.currentPosIndex];
       const updatedSession: GameSession = {
         ...session,
         status: 'failed',
@@ -260,18 +275,36 @@ export default function App() {
         posProgress: {
           ...session.posProgress,
           [currentLocId]: {
-            ...session.posProgress[currentLocId],
+            ...existingProg,
+            questionAttempts: {
+              ...existingProg.questionAttempts,
+              [currentQ.id]: res.attemptsUsed,
+            },
             failed: true,
           },
         },
       };
       setSession(updatedSession);
       gameService.saveSession(updatedSession);
-    } else if (res.isCorrect && res.score !== undefined) {
-      setSession({
+    } else {
+      const updatedSession: GameSession = {
         ...session,
-        score: res.score,
-      });
+        score: res.score !== undefined ? res.score : session.score,
+        totalCorrect: res.isCorrect ? session.totalCorrect + 1 : session.totalCorrect,
+        totalAttempts: session.totalAttempts + 1,
+        posProgress: {
+          ...session.posProgress,
+          [currentLocId]: {
+            ...existingProg,
+            questionAttempts: {
+              ...existingProg.questionAttempts,
+              [currentQ.id]: res.attemptsUsed,
+            },
+            solvedQuestions: newSolved,
+          },
+        },
+      };
+      setSession(updatedSession);
     }
 
     return res;
